@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
 import asyncio
-
 import os
-TOKEN = os.environ.get("MTUxNDUwNDAwODIzNTIyNTE4OA.GankWM.Tp_xI3tDpwsu2scCJuvMQCh0RwlrHjGt9RjvSI")
+
+TOKEN = os.environ.get("TOKEN")
 GUILD_ID = 803650819462529095          # Your server ID
 VOICE_CHANNEL_ID = 899659131068231731  # Your guest voice channel ID
 GUEST_ROLE_NAME = "Guest"     # Role name to assign guests
