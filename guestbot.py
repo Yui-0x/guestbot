@@ -22,7 +22,7 @@ async def on_ready():
 @bot.event
 async def on_member_join(member):
     guild = member.guild
-    if guild.id not in SERVERS:
+    if guild.id != GUILD_ID:
         return
 
     role = discord.utils.get(guild.roles, name=GUEST_ROLE_NAME)
@@ -47,7 +47,7 @@ async def on_member_join(member):
     if member is None:
         return
 
-    voice_channel_id = SERVERS[guild.id]
+    voice_channel_id = VOICE_CHANNEL_ID
     if member.voice is None or member.voice.channel.id != voice_channel_id:
         try:
             await member.kick(reason=f"Did not join guest voice channel within {TIMEOUT_MINUTES} minutes")
