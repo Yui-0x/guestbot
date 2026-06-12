@@ -21,28 +21,37 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    guild = bot.get_guild(GUILD_ID)
-    if guild is None:
+    guild = member.guild
+    if guild.id not in SERVERS:
         return
 
-    # Assign guest role
     role = discord.utils.get(guild.roles, name=GUEST_ROLE_NAME)
     if role:
-        await member.add_roles(role)
-        print(f"Assigned Guest role to {member.name}")
+        for attempt in range(3):
+            try:
+                await member.add_roles(role)
+                print(f"Assigned Guest role to {member.name} in {guild.name}")
+                break
+            except discord.HTTPException as e:
+                if e.status == 429:
+                    retry_after = getattr(e, "retry_after", 5)
+                    print(f"Rate limited, retrying in {retry_after}s...")
+                    await asyncio.sleep(retry_after)
+                else:
+                    print(f"Failed to assign role: {e}")
+                    break
 
-    # Start timeout — kick if they don't join voice in time
     await asyncio.sleep(TIMEOUT_MINUTES * 60)
 
-    # Check if they're still in server and still not in voice
     member = guild.get_member(member.id)
     if member is None:
-        return  # Already left
+        return
 
-    if member.voice is None or member.voice.channel.id != VOICE_CHANNEL_ID:
+    voice_channel_id = SERVERS[guild.id]
+    if member.voice is None or member.voice.channel.id != voice_channel_id:
         try:
             await member.kick(reason=f"Did not join guest voice channel within {TIMEOUT_MINUTES} minutes")
-            print(f"Kicked {member.name} for not joining voice in time")
+            print(f"Kicked {member.name} from {guild.name} for not joining voice")
         except discord.Forbidden:
             print(f"Could not kick {member.name} - missing permissions")
 
