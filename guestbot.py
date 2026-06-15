@@ -4,10 +4,22 @@ import asyncio
 import os
 
 TOKEN = os.environ.get("TOKEN")
-GUILD_ID = 803650819462529095          # Your server ID
-VOICE_CHANNEL_ID = 899659131068231731  # Your guest voice channel ID
-GUEST_ROLE_NAME = "Guest"     # Role name to assign guests
-TIMEOUT_MINUTES = 20           # Kick if they don't join voice within this time
+
+# churchmate
+GUILD_ID_1 = 803650819462529095
+VOICE_CHANNEL_ID_1 = 899659131068231731
+
+# agent orange
+GUILD_ID_2 = 1504814669938954260
+VOICE_CHANNEL_ID_2 = 1504814670551318534
+
+GUEST_ROLE_NAME = "Guest"
+TIMEOUT_MINUTES = 20
+
+SERVERS = {
+    GUILD_ID_1: VOICE_CHANNEL_ID_1,
+    GUILD_ID_2: VOICE_CHANNEL_ID_2,
+}
 
 intents = discord.Intents.default()
 intents.members = True
@@ -22,7 +34,7 @@ async def on_ready():
 @bot.event
 async def on_member_join(member):
     guild = member.guild
-    if guild.id != GUILD_ID:
+    if guild.id not in SERVERS:
         return
 
     role = discord.utils.get(guild.roles, name=GUEST_ROLE_NAME)
@@ -47,7 +59,7 @@ async def on_member_join(member):
     if member is None:
         return
 
-    voice_channel_id = VOICE_CHANNEL_ID
+    voice_channel_id = SERVERS[guild.id]
     if member.voice is None or member.voice.channel.id != voice_channel_id:
         try:
             await member.kick(reason=f"Did not join guest voice channel within {TIMEOUT_MINUTES} minutes")
@@ -57,18 +69,19 @@ async def on_member_join(member):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    guild = bot.get_guild(GUILD_ID)
-    if guild is None:
+    guild = member.guild
+    if guild.id not in SERVERS:
         return
 
-    # Check if they left the guest voice channel
-    if before.channel and before.channel.id == VOICE_CHANNEL_ID:
-        if after.channel is None or after.channel.id != VOICE_CHANNEL_ID:
+    voice_channel_id = SERVERS[guild.id]
+
+    if before.channel and before.channel.id == voice_channel_id:
+        if after.channel is None or after.channel.id != voice_channel_id:
             role = discord.utils.get(guild.roles, name=GUEST_ROLE_NAME)
             if role and role in member.roles:
                 try:
                     await member.kick(reason="Guest left the voice channel")
-                    print(f"Kicked {member.name} for leaving guest channel")
+                    print(f"Kicked {member.name} from {guild.name} for leaving guest channel")
                 except discord.Forbidden:
                     print(f"Could not kick {member.name} - missing permissions")
 
